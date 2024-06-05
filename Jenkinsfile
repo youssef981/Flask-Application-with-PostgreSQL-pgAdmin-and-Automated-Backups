@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     environment {
-        REPO_URL = 'https://github.com/<your-username>/<your-repo>.git'
+        REPO_URL = 'https://github.com/youssef981/Flask-Application-with-PostgreSQL-pgAdmin-and-Automated-Backups.git'
         DOCKER_COMPOSE_PATH = '.' // Jenkinsfile is in the same directory
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: "${env.REPO_URL}"
+                git branch: 'master', url: "${env.REPO_URL}"
             }
         }
 
