@@ -29,7 +29,7 @@ services:
   backup:
     image: postgres:10
     volumes:
-      - /path/to/backup/dir:/backups/
+      - /var/backups/postgres:/backups/
       - ./scripts:/scripts/
     environment:
       POSTGRES_HOST: db
