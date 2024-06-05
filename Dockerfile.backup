@@ -1,5 +1,6 @@
 FROM postgres:10
 
-COPY scripts/backup.sh /scripts/backup.sh  # Copy from the scripts subdirectory
-RUN chmod +x /scripts/backup.sh
+RUN mkdir -p /scripts
+COPY scripts/backup.sh /scripts/backup.sh
+RUN ls -l /scripts && chmod +x /scripts/backup.sh
 ENTRYPOINT ["/scripts/backup.sh"]

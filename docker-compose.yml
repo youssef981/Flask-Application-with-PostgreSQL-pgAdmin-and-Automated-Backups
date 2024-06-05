@@ -26,18 +26,20 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: root
+ 
+ backup:
+  build:
+    context: .
+    dockerfile: Dockerfile.backup
+  volumes:
+    - /var/backups/postgres:/backups/
+    - ./scripts:/scripts
+  environment:
+    POSTGRES_HOST: db
+    POSTGRES_DB: ${POSTGRES_DB}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  depends_on:
+    - db
 
-  backup:
-    build:
-      context: .
-      dockerfile: Dockerfile.backup
-    volumes:
-      - /var/backups/postgres:/backups/  
-      - ./scripts:/script
-    environment:
-      POSTGRES_HOST: db
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    depends_on:
-      - db
+  
