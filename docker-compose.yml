@@ -1,0 +1,41 @@
+version: "3"
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./app/:/home/app/
+    depends_on:
+      - db
+
+  db:
+    image: postgres:10
+    env_file: .env
+    expose:
+      - 5432
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    env_file: .env  # Optionally, use the same .env for pgAdmin settings
+    ports:
+      - "5050:80"  # Expose pgAdmin on port 5050 of your host machine
+    depends_on:
+      - db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: root
+
+  backup:
+    image: postgres:10
+    volumes:
+      - /path/to/backup/dir:/backups/
+      - ./scripts:/scripts/
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    entrypoint: ["/scripts/backup.sh"]
+    depends_on:
+      - db
