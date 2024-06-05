@@ -30,8 +30,6 @@ pipeline {
                 sh 'docker-compose down || true' // Ignore errors if no containers are running
                 // Build and bring up the containers
                 sh 'docker-compose up -d --build'
-                // Ensure all containers are running
-                sh 'docker-compose up -d'
             }
         }
 
@@ -45,13 +43,17 @@ pipeline {
 
     post {
         always {
-            // Ensure that all containers are brought down at the end of the pipeline
-            sh 'docker-compose down'
+            script {
+                // Ensure that all containers are brought down at the end of the pipeline
+                sh 'docker-compose down'
+            }
         }
         failure {
-            // Additional debug information if the pipeline fails
-            echo 'Pipeline failed! Gathering debug information...'
-            sh 'docker-compose logs'
+            script {
+                // Additional debug information if the pipeline fails
+                echo 'Pipeline failed! Gathering debug information...'
+                sh 'docker-compose logs'
+            }
         }
     }
 }
