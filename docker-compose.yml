@@ -32,7 +32,8 @@ services:
       context: .
       dockerfile: Dockerfile.backup
     volumes:
-      - /var/backups/postgres:/backups/  # Corrected volume mapping
+      - /var/backups/postgres:/backups/  
+      - ./scripts:/script
     environment:
       POSTGRES_HOST: db
       POSTGRES_DB: ${POSTGRES_DB}
