@@ -4,8 +4,6 @@ pipeline {
     environment {
         REPO_URL = 'https://github.com/youssef981/Flask-Application-with-PostgreSQL-pgAdmin-and-Automated-Backups.git'
         DOCKER_COMPOSE_PATH = '.'
-        DOCKER_IMAGE = 'my-flask-app'
-        DOCKER_TAG = 'latest'
     }
 
     stages {
@@ -29,10 +27,8 @@ pipeline {
                 sh 'docker-compose down -v || true'
                 // Remove old Docker images
                 sh 'docker image prune -f'
-                // Build the new Docker image
-                sh "docker build --no-cache -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                // Start the Docker containers defined in the Docker Compose file
-                sh 'docker-compose up -d'
+                // Build and start the Docker containers in detached mode
+                sh 'docker-compose up -d --build'
                 // Wait for the Flask application to be ready
                 sh '''
                     echo "Waiting for the Flask application to be ready..."
@@ -49,19 +45,6 @@ pipeline {
                 sh 'docker-compose run backup'
             }
         }
-        
-        stage('Docker Push') {
-            steps {
-                script {
-                    // Tag the Docker image for pushing to Docker Hub
-                    sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${env.DOCKERHUB_REPO}:${DOCKER_TAG}"
-                    // Log in to Docker Hub and push the tagged image
-                    sh "docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD"
-                    sh "docker push ${env.DOCKERHUB_REPO}:${DOCKER_TAG}"
-                    sh "docker logout"
-                }
-            }
-        }
     }
 
     post {
@@ -73,8 +56,7 @@ pipeline {
         }
         cleanup {
             script {
-                // Ensure that all Docker containers are shut down at the end of the pipeline
-                sh 'docker-compose down'
+                echo 'Cleanup step - Docker containers will remain up and running.'
             }
         }
     }
