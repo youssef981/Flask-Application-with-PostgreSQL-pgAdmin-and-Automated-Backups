@@ -1,39 +1,80 @@
-# docker-flask-postgres
+## Flask Application with PostgreSQL, pgAdmin, and Automated Backups
 
-This is a simple demo for how to connect to a Postgres database from a python flask application. To run this on your computer you must first install [docker](https://docs.docker.com/engine/installation/).
+Ce projet présente une application web Flask simple, sécurisée et robuste, conçue pour être déployée dans un environnement Docker. Il met en œuvre les meilleures pratiques pour la gestion de base de données (PostgreSQL) et inclut des sauvegardes automatisées pour assurer la fiabilité des données.
 
-## Running
-
-First fork the repo then do a `git clone`.
-
-    git clone https://github.com/<yournamehere>/docker-flask-postgres
-
-You should also have [docker](https://docs.docker.com/install/). If you're on linux, you probably also want docker-compose. Last I checked (over a year ago) it did not come with docker by default. For Mac and Windows you get it with the default installation.
-
-Once you have all of that, you should be good. No need to install [Postgres](https://www.postgresql.org/) or even Python.
+### Structure du Projet
 
 ```
-docker-compose up --build -d   # Run the container.
-
-docker-compose down   # Stop and remove everything.
-
-# Add your code to the /app/ directory.
-# At the moment, you have to do a fig up/down after each change.
+├── app
+│   ├── templates
+│   │   └── show_all.html
+│   ├── app.py
+│   └── dbcreate.py
+├── base-image
+│   ├── Dockerfile
+│   ├── README.md
+│   └── requirements.txt
+├── scripts
+│   └── backup.sh
+├── .env
+├── Dockerfile
+├── Dockerfile.backup
+├── Jenkinsfile
+└── README.md
 ```
 
-The site will be available to you at `localhost:43434`.
+* **app:** Contient le code source de l'application Flask.
+    * **templates:** Stocke les fichiers HTML pour le rendu des pages web.
+    * **app.py:** Le script principal de l'application Flask.
+    * **dbcreate.py:** Script d'initialisation de la base de données PostgreSQL.
+* **base-image:** Dossier contenant les éléments pour construire une image de base.
+    * **Dockerfile:** Définit l'image de base pour le conteneur Docker.
+    * **requirements.txt:** Liste les dépendances Python nécessaires.
+* **scripts:** Contient les scripts auxiliaires.
+    * **backup.sh:** Script pour effectuer une sauvegarde de la base de données.
+* **.env:** Fichier pour stocker les variables d'environnement (par exemple, les informations d'identification de la base de données).
+* **Dockerfile:** Définit comment construire l'image Docker pour l'application.
+* **Dockerfile.backup:** Dockerfile pour l'image du conteneur responsable de la sauvegarde.
+* **Jenkinsfile:** Script Groovy utilisé par Jenkins pour automatiser le déploiement.
+* **README.md:** Ce fichier, expliquant le projet (vous êtes ici !).
 
-If you have questions, I'm on twitter @mehemken. I encourage you to let me know what you use this for and how I could make it easier for you to use.
+### Fonctionnement
 
-## One year later
+1. **Conteneur de l'application (Flask):**
+   - Exécute l'application Flask.
+   - Se connecte à la base de données PostgreSQL.
+   - Sert des pages web dynamiques basées sur les données de la base de données.
 
-So this got forked. I'm surprised but I'm glad someone found it useful. Then I got nervous thinking "uh oh, does this actually work?". I just follwed the above instructions and I'm happy to report that, yes. It does still work. :)
+2. **Conteneur de base de données (PostgreSQL):**
+   - Stocke les données de l'application.
+   - Gère les requêtes SQL de l'application Flask.
 
-Three months since this and a few more forks. Hmm... I'm going to have to clean this up a little bit. And use a more up to date docker-compose. And add tests...
+3. **Conteneur de sauvegarde:**
+   - Se connecte périodiquement à la base de données.
+   - Crée des sauvegardes de la base de données selon un calendrier défini.
 
+4. **Jenkins (Automatisation):**
+   - Automatise l'ensemble du processus de construction et de déploiement.
+   - Garantit que le code le plus récent est toujours déployé et que les données sont sauvegardées régulièrement.
 
-## How it works
+### Déploiement avec Jenkins
 
-There are two Dockerfiles. One is the base Dockerfile that has Python and Flask. I've separated that one out so you don't have to keep downloading Python and Flask over and over again. The second one is the application Dockerfile. This is the one that will get updated frequently as you make changes to your Flask app. I found this to be a faster, more convenient iteration cycle for when I was building it.
+Le fichier `Jenkinsfile` inclus dans le projet est un script Groovy qui décrit le pipeline de déploiement Jenkins.
 
-The `docker-compose.yml` file tells Docker that you need your Flask container and a Postgres container.
+Voici les étapes clés du pipeline :
+
+1. **Cloner le référentiel Git.**
+2. **Arrêter les conteneurs existants et supprimer les volumes pour éviter les conflits.**
+3. **Construire et démarrer les conteneurs Docker.**
+4. **Attendre que l'application Flask soit prête à répondre aux requêtes.**
+5. **Sauvegarder la base de données PostgreSQL.**
+
+### Exécution du projet
+
+1. **Prérequis:**
+   - Docker et Docker Compose installés sur le serveur Ubuntu.
+   - Jenkins installé et configuré sur le serveur Ubuntu.
+2. **Configuration:**
+   - Définissez les variables d'environnement nécessaires dans Jenkins (par exemple, les informations d'identification de la base de données) et sur votre machine locale si besoin.
+3. **Exécution du Pipeline Jenkins:**
+   - Déclenchez le pipeline Jenkins pour automatiser le déploiement de l'application.
