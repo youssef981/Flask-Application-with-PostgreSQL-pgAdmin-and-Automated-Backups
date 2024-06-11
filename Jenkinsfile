@@ -2,64 +2,79 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "my-node-app"
-        DOCKER_TAG = "1.0"
-        CONTAINER_NAME = "my-node-app"
-        DOCKERHUB_REPO = "erramlysalma/my-node-app"
+        REPO_URL = 'https://github.com/youssef981/Flask-Application-with-PostgreSQL-pgAdmin-and-Automated-Backups.git'
+        DOCKER_COMPOSE_PATH = '.'
+        DOCKER_IMAGE = 'my-flask-app'
+        DOCKER_TAG = 'latest'
     }
 
     stages {
-        stage("Checkout") {
-            steps {
-                checkout scm
-            }
-        }
-        stage("Clean Up Old Container") {
+        stage('Clone Repository') {
             steps {
                 script {
-                    // Stop and remove the old container if it exists
-                    sh """
-                    if [ \$(docker ps -aq -f name=${CONTAINER_NAME}) ]; then
-                        docker stop ${CONTAINER_NAME} || true
-                        docker rm ${CONTAINER_NAME} || true
-                    fi
-                    """
+                    sh 'git --version'
+                    sh 'env'
                 }
+                git branch: 'master', url: "${env.REPO_URL}"
             }
         }
-        stage("Remove Old Image") {
+
+        stage('Build and Deploy') {
             steps {
                 script {
-                    // Remove the old image if it exists
-                    sh """
-                    if [ \$(docker images -q ${DOCKER_IMAGE}:${DOCKER_TAG}) ]; then
-                        docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true
-                    fi
-                    """
+                    sh 'docker --version'
+                    sh 'docker-compose --version'
                 }
-            }
-        }
-        stage("Build Image") {
-            steps {
+                // Shut down existing Docker containers and remove volumes to avoid old code being used
+                sh 'docker-compose down -v || true'
+                // Remove old Docker images
+                sh 'docker image prune -f'
                 // Build the new Docker image
                 sh "docker build --no-cache -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                // Start the Docker containers defined in the Docker Compose file
+                sh 'docker-compose up -d'
+                // Wait for the Flask application to be ready
+                sh '''
+                    echo "Waiting for the Flask application to be ready..."
+                    while ! curl -s http://localhost:5000/; do
+                        sleep 5
+                    done
+                    echo "Flask application is up and running!"
+                '''
             }
         }
-        stage("Run New Container") {
+
+        stage('Backup Database') {
             steps {
-                // Run the new Docker container with the updated image
-                sh "docker run -d --name ${CONTAINER_NAME} -p 82:3000 ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                sh 'docker-compose run backup'
             }
         }
+        
         stage('Docker Push') {
             steps {
                 script {
-                    // Push the Docker image to Docker Hub
+                    // Tag the Docker image for pushing to Docker Hub
+                    sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${env.DOCKERHUB_REPO}:${DOCKER_TAG}"
+                    // Log in to Docker Hub and push the tagged image
                     sh "docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD"
-                    sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKERHUB_REPO}:${DOCKER_TAG}"
-                    sh "docker push ${DOCKERHUB_REPO}:${DOCKER_TAG}"
+                    sh "docker push ${env.DOCKERHUB_REPO}:${DOCKER_TAG}"
                     sh "docker logout"
                 }
+            }
+        }
+    }
+
+    post {
+        failure {
+            script {
+                echo 'Pipeline failed! Gathering debug information...'
+                sh 'docker-compose logs'
+            }
+        }
+        cleanup {
+            script {
+                // Ensure that all Docker containers are shut down at the end of the pipeline
+                sh 'docker-compose down'
             }
         }
     }
