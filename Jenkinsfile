@@ -23,8 +23,11 @@ pipeline {
                     sh 'docker --version'
                     sh 'docker-compose --version'
                 }
-                sh 'docker-compose down || true'
+                // Shut down existing Docker containers and remove volumes to avoid old code being used
+                sh 'docker-compose down -v || true'
+                // Build and start the Docker containers in detached mode
                 sh 'docker-compose up -d --build'
+                // Wait for the Flask application to be ready
                 sh '''
                     echo "Waiting for the Flask application to be ready..."
                     while ! curl -s http://localhost:5000/; do
