@@ -25,6 +25,8 @@ pipeline {
                 }
                 // Shut down existing Docker containers and remove volumes to avoid old code being used
                 sh 'docker-compose down -v || true'
+                // Remove old Docker images
+                sh 'docker image prune -f'
                 // Build and start the Docker containers in detached mode
                 sh 'docker-compose up -d --build'
                 // Wait for the Flask application to be ready
